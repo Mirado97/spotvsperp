@@ -91,6 +91,15 @@ class BybitMarketFeed(ExchangeMarketFeed):
     async def subscribe_perp_ticker(self, symbol: str) -> None:
         await self._linear_ws.subscribe([C.ticker_topic(symbol)])
 
+    async def subscribe_spot_tickers(self, symbols: list[str]) -> None:
+        await self._spot_ws.subscribe([C.ticker_topic(s) for s in symbols])
+
+    async def subscribe_perp_tickers(self, symbols: list[str]) -> None:
+        await self._linear_ws.subscribe([C.ticker_topic(s) for s in symbols])
+
+    async def subscribe_liquidations_batch(self, symbols: list[str]) -> None:
+        await self._linear_ws.subscribe([C.liquidation_topic(s) for s in symbols])
+
     async def subscribe_spot_orderbook(self, symbol: str, depth: int = 50) -> None:
         await self._spot_ws.subscribe([C.orderbook_topic(symbol, depth)])
 

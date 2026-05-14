@@ -166,11 +166,9 @@ async def _build_app() -> Application:
         writer.start()
         await orchestrator.start(strategy_configs)
         await api.start()
-        for sym in _symbols:
-            await feed.subscribe_spot_ticker(sym)
-            await feed.subscribe_perp_ticker(sym)
-        for sym in _symbols:
-            await feed.subscribe_liquidations(sym)
+        await feed.subscribe_spot_tickers(_symbols)
+        await feed.subscribe_perp_tickers(_symbols)
+        await feed.subscribe_liquidations_batch(_symbols)
         _poller_task = asyncio.create_task(_poll_rtt(), name="rtt_poller")
         logger.info("app.all_services_started", symbols=_symbols)
 
