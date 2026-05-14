@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import time
@@ -222,17 +223,30 @@ class BybitRestClient:
             return []
         items = resp.get("result", {}).get("list", [])
         if not items:
-            logger.warning("bybit_rest.get_all_linear_tickers_empty", resp_keys=list(resp.keys()),
+            logger.warning("bybit_rest.get_all_linear_tickers_empty",
                            ret_code=resp.get("retCode"), ret_msg=resp.get("retMsg"))
         return items
 
+    async def get_spot_symbols(self) -> set[str]:
+        """Return set of all symbols available on Bybit spot market."""
+        try:
+            resp = await self._get_public("/v5/market/tickers", {"category": "spot"})
+            return {t["symbol"] for t in resp.get("result", {}).get("list", [])}
+        except Exception:
+            logger.exception("bybit_rest.get_spot_symbols_error")
+            return set()
+
     async def get_top_usdt_perp_symbols(self, n: int = 100) -> list[str]:
-        """Return top-N USDT-margined perpetual symbols sorted by 24h turnover."""
-        tickers = await self.get_all_linear_tickers()
+        """Return top-N USDT perp symbols that also have spot trading, sorted by 24h turnover."""
+        perp_tickers, spot_symbols = await asyncio.gather(
+            self.get_all_linear_tickers(),
+            self.get_spot_symbols(),
+        )
         usdt_perps = [
-            t for t in tickers
+            t for t in perp_tickers
             if t.get("symbol", "").endswith("USDT")
             and "-" not in t.get("symbol", "")
+            and t.get("symbol") in spot_symbols
         ]
         usdt_perps.sort(key=lambda t: float(t.get("turnover24h") or 0), reverse=True)
         return [t["symbol"] for t in usdt_perps[:n]]
