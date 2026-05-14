@@ -126,13 +126,10 @@ class BybitRestClient:
         return data
 
     async def _get_public(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
-        # Public market data is always on mainnet regardless of account type
-        session = await self._get_session()
-        async with session.get(
-            f"{_MAINNET_URL}{path}",
-            params=params,
-        ) as resp:
-            return await resp.json(content_type=None)
+        # Public market data: always mainnet, fresh session without Content-Type
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{_MAINNET_URL}{path}", params=params) as resp:
+                return await resp.json(content_type=None)
 
     # ── Order API ─────────────────────────────────────────────────────────────
 
