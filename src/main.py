@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 
 from src.basis.engine import BasisEngine
 from src.core.logging_setup import configure_logging
@@ -134,7 +135,7 @@ async def _build_app() -> Application:
     async def _poll_perp_tickers() -> None:
         """REST fallback for linear tickers — Bybit testnet WS doesn't push perp data."""
         while True:
-            ts_ms = int(asyncio.get_event_loop().time() * 1000)
+            ts_ms = int(time.time() * 1000)
             for sym in _SYMBOLS:
                 try:
                     raw = await rest.get_linear_ticker(sym)
