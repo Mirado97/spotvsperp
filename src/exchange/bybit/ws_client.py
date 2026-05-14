@@ -166,8 +166,12 @@ class BybitWSClient:
             logger.warning("ws_client.json_parse_error", raw=str(raw)[:200])
             return
 
-        # Skip ping/pong/op-confirm frames — only route topic messages
+        # Log subscription confirmations and errors from Bybit
         if "topic" not in data:
+            if data.get("op") or data.get("success") is not None:
+                logger.info("ws_client.op_response", url=self._url.split("/")[-1],
+                            success=data.get("success"), op=data.get("op"),
+                            ret_msg=data.get("ret_msg", ""))
             return
 
         logger.debug("ws_client.topic_received", topic=data.get("topic"), url=self._url.split("/")[-1])
