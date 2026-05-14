@@ -218,8 +218,16 @@ class BybitRestClient:
 
     async def get_all_linear_tickers(self) -> list[dict[str, Any]]:
         """Fetch all linear/perpetual tickers in one request."""
-        resp = await self._get_public("/v5/market/tickers", {"category": "linear"})
-        return resp.get("result", {}).get("list", [])
+        try:
+            resp = await self._get_public("/v5/market/tickers", {"category": "linear"})
+        except Exception:
+            logger.exception("bybit_rest.get_all_linear_tickers_error")
+            return []
+        items = resp.get("result", {}).get("list", [])
+        if not items:
+            logger.warning("bybit_rest.get_all_linear_tickers_empty", resp_keys=list(resp.keys()),
+                           ret_code=resp.get("retCode"), ret_msg=resp.get("retMsg"))
+        return items
 
     async def get_top_usdt_perp_symbols(self, n: int = 100) -> list[str]:
         """Return top-N USDT-margined perpetual symbols sorted by 24h turnover."""

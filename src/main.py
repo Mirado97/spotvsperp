@@ -33,15 +33,21 @@ logger = get_logger(__name__)
 _EXCHANGE = "BYBIT"
 
 
+_FALLBACK_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
+
+
 async def _resolve_symbols(rest: "BybitRestClient") -> list[str]:
     """Return symbol list: from env if set, else top-N by 24h volume from Bybit."""
-    raw = os.getenv("TRADING_symbols", "").strip()
+    raw = os.getenv("TRADING_SYMBOLS", "").strip()
     if raw:
         return [s.strip() for s in raw.split(",") if s.strip()]
-    n = int(os.getenv("TOP_symbols_N", "100"))
+    n = int(os.getenv("TOP_SYMBOLS_N", "100"))
     symbols = await rest.get_top_usdt_perp_symbols(n)
-    logger.info("symbols.auto_resolved", count=len(symbols), top5=symbols[:5])
-    return symbols
+    if symbols:
+        logger.info("symbols.auto_resolved", count=len(symbols), top5=symbols[:5])
+        return symbols
+    logger.warning("symbols.auto_resolve_failed", fallback=_FALLBACK_SYMBOLS)
+    return _FALLBACK_SYMBOLS
 
 
 async def _build_app() -> Application:
