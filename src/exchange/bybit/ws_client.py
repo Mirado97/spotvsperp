@@ -134,8 +134,15 @@ class BybitWSClient:
             logger.info("ws_client.connected", url=self._url)
 
             if self._subscribed_topics:
-                logger.info("ws_client.subscribing", url=self._url, topics=self._subscribed_topics)
-                await self._send({"op": "subscribe", "args": self._subscribed_topics})
+                # Send tickers/orderbooks first, liquidations separately to avoid batch rejection
+                primary = [t for t in self._subscribed_topics if not t.startswith("liquidation.")]
+                secondary = [t for t in self._subscribed_topics if t.startswith("liquidation.")]
+                if primary:
+                    logger.info("ws_client.subscribing", url=self._url, topics=primary)
+                    await self._send({"op": "subscribe", "args": primary})
+                if secondary:
+                    logger.info("ws_client.subscribing", url=self._url, topics=secondary)
+                    await self._send({"op": "subscribe", "args": secondary})
 
             hb_task = asyncio.create_task(self._heartbeat_loop(), name="ws_heartbeat")
             try:
