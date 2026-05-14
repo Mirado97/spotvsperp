@@ -124,7 +124,10 @@ class BybitMarketFeed(ExchangeMarketFeed):
             symbol = topic[8:]
             ticker = parse_spot_ticker(data, ts_ms)
             if ticker:
+                logger.debug("feed.spot_ticker", symbol=symbol, last=ticker.last)
                 self._bus.publish(C.bus_ticker_topic(_EXCHANGE_NAME, symbol, "SPOT"), ticker)
+            else:
+                logger.warning("feed.spot_ticker_parse_failed", topic=topic)
 
         elif topic.startswith("orderbook."):
             await self._spot_ob.handle(data, ts_ms)
@@ -137,7 +140,10 @@ class BybitMarketFeed(ExchangeMarketFeed):
             symbol = topic[8:]
             ticker, funding, oi = parse_linear_ticker(data, ts_ms)
             if ticker:
+                logger.debug("feed.perp_ticker", symbol=symbol, last=ticker.last)
                 self._bus.publish(C.bus_ticker_topic(_EXCHANGE_NAME, symbol, "PERP"), ticker)
+            else:
+                logger.warning("feed.perp_ticker_parse_failed", topic=topic)
             if funding:
                 self._bus.publish(C.bus_funding_topic(_EXCHANGE_NAME, symbol), funding)
             if oi:
