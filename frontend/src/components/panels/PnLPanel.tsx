@@ -3,6 +3,7 @@
 import { useTerminalStore } from "@/store/terminalStore";
 import { fmtUsd } from "@/components/ui/ValueCell";
 import { ValueCell } from "@/components/ui/ValueCell";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 export function PnLPanel() {
   const { equity, balance_usdt, risk, fills } = useTerminalStore();
@@ -18,18 +19,18 @@ export function PnLPanel() {
 
       {/* Summary row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card label="TOTAL EQUITY">
+        <Card label="TOTAL EQUITY" tip="Общий капитал аккаунта в USDT (баланс + нереализованный P&L)">
           <span className="text-zinc-200 text-base">{fmtUsd(equity)}</span>
         </Card>
-        <Card label="AVAILABLE USDT">
+        <Card label="AVAILABLE USDT" tip="Свободный баланс USDT, доступный для открытия новых позиций">
           <span className="text-zinc-200 text-base">{fmtUsd(balance_usdt)}</span>
         </Card>
-        <Card label="DRAWDOWN">
+        <Card label="DRAWDOWN" tip="Просадка от максимального значения капитала за сессию">
           <span className={`text-base font-semibold ${risk.drawdown_pct > 0.03 ? "text-red-400" : "text-zinc-200"}`}>
             {(risk.drawdown_pct * 100).toFixed(2)}%
           </span>
         </Card>
-        <Card label="TOTAL FEES (SESSION)">
+        <Card label="TOTAL FEES (SESSION)" tip="Суммарные комиссии, уплаченные бирже за текущую сессию">
           <span className="text-amber-400 text-base">{fmtUsd(totalFees)}</span>
         </Card>
       </div>
@@ -38,15 +39,15 @@ export function PnLPanel() {
       <section>
         <h2 className="text-zinc-500 text-xs font-semibold mb-3 tracking-wider">SESSION FILL SUMMARY</h2>
         <div className="grid grid-cols-3 gap-3">
-          <Card label="FILLS">
+          <Card label="FILLS" tip="Количество исполненных сделок за текущую сессию">
             <span className="text-zinc-200">{fills.length}</span>
           </Card>
-          <Card label="TOTAL VOLUME">
+          <Card label="TOTAL VOLUME" tip="Суммарный торговый объём за сессию в USDT">
             <span className="text-zinc-200">
               {fmtUsd(fills.reduce((a, f) => a + f.qty * f.price, 0))}
             </span>
           </Card>
-          <Card label="REALIZED PnL (EST)">
+          <Card label="REALIZED PnL (EST)" tip="Приблизительный реализованный P&L по сделкам. Без учёта финансирования и свопов">
             <ValueCell value={realizedPnl} decimals={2} suffix=" USDT" />
           </Card>
         </div>
@@ -56,10 +57,10 @@ export function PnLPanel() {
       <section>
         <h2 className="text-zinc-500 text-xs font-semibold mb-3 tracking-wider">RISK CONTEXT</h2>
         <div className="grid grid-cols-2 gap-3">
-          <Card label="TOTAL EXPOSURE">
+          <Card label="TOTAL EXPOSURE" tip="Суммарная долларовая стоимость всех открытых позиций (спот + фьючерс)">
             <span className="text-zinc-200">{fmtUsd(risk.total_exposure_usd)}</span>
           </Card>
-          <Card label="MAX DELTA">
+          <Card label="MAX DELTA" tip="Максимальный направленный риск по одной паре. При >$3,000 — предупреждение">
             <span className={risk.max_delta_usd > 3_000 ? "text-amber-400" : "text-zinc-200"}>
               {fmtUsd(risk.max_delta_usd)}
             </span>
@@ -70,10 +71,13 @@ export function PnLPanel() {
   );
 }
 
-function Card({ label, children }: { label: string; children: React.ReactNode }) {
+function Card({ label, tip, children }: { label: string; tip: string; children: React.ReactNode }) {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded p-3 space-y-1">
-      <div className="text-zinc-500 text-xs tracking-wider">{label}</div>
+      <div className="text-zinc-500 text-xs tracking-wider inline-flex items-center gap-0.5">
+        {label}
+        <Tooltip text={tip} />
+      </div>
       <div className="font-semibold">{children}</div>
     </div>
   );

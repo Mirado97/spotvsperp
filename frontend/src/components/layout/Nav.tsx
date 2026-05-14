@@ -1,7 +1,19 @@
 "use client";
 
+import { Tooltip } from "@/components/ui/Tooltip";
+
 const TABS = ["BASIS", "FUNDING", "POSITIONS", "RISK", "EXECUTION", "PnL", "LATENCY"] as const;
 export type Tab = (typeof TABS)[number];
+
+const TAB_TIPS: Record<Tab, string> = {
+  BASIS:      "Анализ базиса — разница цен спот и фьючерс. Основной экран для поиска кэрри-возможностей",
+  FUNDING:    "Ставки финансирования — плата за удержание бессрочных фьючерс-позиций. Ключевой источник дохода в кэрри-стратегии",
+  POSITIONS:  "Открытые позиции по всем парам: размер, средняя цена, дельта-риск",
+  RISK:       "Риск-менеджмент: просадка, суммарная экспозиция, лимиты и состояние алгоритмов",
+  EXECUTION:  "История ордеров и сделок: заявки, исполнение, комиссии",
+  PnL:        "Прибыль и убыток по стратегии: реализованный и нереализованный P&L",
+  LATENCY:    "Задержки соединения: скорость получения данных с биржи и до браузера",
+};
 
 interface Props {
   active: Tab;
@@ -16,7 +28,7 @@ export function Nav({ active, onChange }: Props) {
           key={tab}
           onClick={() => onChange(tab)}
           className={[
-            "px-4 py-2 text-xs font-semibold tracking-wider transition-colors",
+            "flex items-center px-4 py-2 text-xs font-semibold tracking-wider transition-colors",
             "border-b-2 -mb-px",
             active === tab
               ? "border-cyan-400 text-cyan-400"
@@ -24,6 +36,7 @@ export function Nav({ active, onChange }: Props) {
           ].join(" ")}
         >
           {tab}
+          <Tooltip text={TAB_TIPS[tab]} below />
         </button>
       ))}
     </nav>

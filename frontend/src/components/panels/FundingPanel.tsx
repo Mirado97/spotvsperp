@@ -2,6 +2,7 @@
 
 import { useTerminalStore } from "@/store/terminalStore";
 import { fmtPct, fmtTs } from "@/components/ui/ValueCell";
+import { ColTh } from "@/components/ui/Tooltip";
 
 export function FundingPanel() {
   const rows = Object.values(useTerminalStore((s) => s.funding)).sort(
@@ -17,16 +18,16 @@ export function FundingPanel() {
       <table className="w-full border-collapse text-xs">
         <thead>
           <tr className="border-b border-zinc-800 bg-zinc-900">
-            <Th>SYMBOL</Th>
-            <Th right>CURRENT 8H</Th>
-            <Th right>PREDICTED</Th>
-            <Th right>EWMA</Th>
-            <Th right>ANN CARRY</Th>
-            <Th right>Z-SCORE</Th>
-            <Th>REGIME</Th>
-            <Th right>EXTREME</Th>
-            <Th right>STREAK</Th>
-            <Th right>UPDATED</Th>
+            <ColTh label="SYMBOL"      tip="Торговая пара (например BTCUSDT)" />
+            <ColTh label="CURRENT 8H" tip="Текущая ставка финансирования за 8 часов. Положительная — лонги платят шортам" right />
+            <ColTh label="PREDICTED"  tip="Прогнозируемая ставка следующего периода финансирования" right />
+            <ColTh label="EWMA"       tip="Экспоненциально взвешенная средняя ставок финансирования — сглаженный тренд" right />
+            <ColTh label="ANN CARRY"  tip="Аннуализированный доход от финансирования. >5% — интересная возможность" right />
+            <ColTh label="Z-SCORE"    tip="Насколько текущая ставка отклоняется от исторической нормы (в стандартных отклонениях)" right />
+            <ColTh label="REGIME"     tip="Режим рынка: backwardation / contango / neutral — направление ценового тренда на фьючерсах" />
+            <ColTh label="EXTREME"    tip="Флаг аномально высокой или низкой ставки финансирования — возможный риск или возможность" right />
+            <ColTh label="STREAK"     tip="Количество подряд идущих периодов с экстремальной ставкой финансирования" right />
+            <ColTh label="UPDATED"    tip="Время последнего обновления данных" right />
           </tr>
         </thead>
         <tbody>
@@ -70,19 +71,11 @@ export function FundingPanel() {
   );
 }
 
-function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
-  return (
-    <th className={`px-3 py-2 text-zinc-500 font-medium ${right ? "text-right" : "text-left"}`}>
-      {children}
-    </th>
-  );
-}
-
 function Td({ children, right, className = "" }: {
   children: React.ReactNode; right?: boolean; className?: string;
 }) {
   return (
-    <td className={`px-3 py-1.5 ${right ? "text-right" : ""} ${className}`}>
+    <td className={`px-3 py-1.5 font-mono tabular-nums whitespace-nowrap ${right ? "text-right" : ""} ${className}`}>
       {children}
     </td>
   );

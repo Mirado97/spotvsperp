@@ -1,7 +1,8 @@
 "use client";
 
 import { useTerminalStore } from "@/store/terminalStore";
-import { ValueCell, fmtNum, fmtUsd } from "@/components/ui/ValueCell";
+import { ValueCell, fmtNum } from "@/components/ui/ValueCell";
+import { ColTh } from "@/components/ui/Tooltip";
 
 export function PositionsPanel() {
   const { positions, basis } = useTerminalStore();
@@ -22,14 +23,14 @@ export function PositionsPanel() {
       <table className="w-full border-collapse text-xs">
         <thead>
           <tr className="border-b border-zinc-800 bg-zinc-900">
-            <Th>SYMBOL</Th>
-            <Th right>SPOT QTY</Th>
-            <Th right>PERP QTY</Th>
-            <Th right>SPOT AVG</Th>
-            <Th right>PERP AVG</Th>
-            <Th right>MARK</Th>
-            <Th right>NET DELTA USD</Th>
-            <Th right>UNREAL PnL</Th>
+            <ColTh label="SYMBOL"       tip="Торговая пара" />
+            <ColTh label="SPOT QTY"     tip="Количество базового актива на споте. Положительное = длинная позиция" right />
+            <ColTh label="PERP QTY"     tip="Количество базового актива на бессрочном фьючерсе. Положительное = лонг" right />
+            <ColTh label="SPOT AVG"     tip="Средняя цена входа в спот-позицию" right />
+            <ColTh label="PERP AVG"     tip="Средняя цена входа во фьючерсную позицию" right />
+            <ColTh label="MARK"         tip="Текущая рыночная цена фьючерса (mid-price)" right />
+            <ColTh label="NET DELTA USD" tip="Суммарный долларовый риск направления: спот + фьючерс. В кэрри-стратегии близко к нулю" right />
+            <ColTh label="UNREAL PnL"   tip="Нереализованная прибыль/убыток по открытым позициям в USDT" right />
           </tr>
         </thead>
         <tbody>
@@ -61,19 +62,11 @@ export function PositionsPanel() {
   );
 }
 
-function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
-  return (
-    <th className={`px-3 py-2 text-zinc-500 font-medium ${right ? "text-right" : "text-left"}`}>
-      {children}
-    </th>
-  );
-}
-
 function Td({ children, right, className = "" }: {
   children: React.ReactNode; right?: boolean; className?: string;
 }) {
   return (
-    <td className={`px-3 py-1.5 ${right ? "text-right" : ""} ${className}`}>
+    <td className={`px-3 py-1.5 font-mono tabular-nums whitespace-nowrap ${right ? "text-right" : ""} ${className}`}>
       {children}
     </td>
   );

@@ -2,6 +2,7 @@
 
 import { useTerminalStore } from "@/store/terminalStore";
 import { fmtNum, fmtTs } from "@/components/ui/ValueCell";
+import { ColTh } from "@/components/ui/Tooltip";
 
 // OrderSide: BUY=1, SELL=2 (from src/models/orders.py)
 const SIDE_LABELS: Record<number, string> = { 1: "BUY", 2: "SELL" };
@@ -28,14 +29,14 @@ export function ExecutionPanel() {
       <table className="w-full border-collapse text-xs">
         <thead>
           <tr className="border-b border-zinc-800 bg-zinc-900">
-            <Th>TIME</Th>
-            <Th>SYMBOL</Th>
-            <Th>INST</Th>
-            <Th>SIDE</Th>
-            <Th right>QTY</Th>
-            <Th right>PRICE</Th>
-            <Th right>VALUE</Th>
-            <Th right>FEE</Th>
+            <ColTh label="TIME"   tip="Время исполнения сделки" />
+            <ColTh label="SYMBOL" tip="Торговая пара" />
+            <ColTh label="INST"   tip="Инструмент: SPOT (спот) или PERP (бессрочный фьючерс)" />
+            <ColTh label="SIDE"   tip="Направление сделки: BUY (покупка) или SELL (продажа)" />
+            <ColTh label="QTY"    tip="Количество базового актива в сделке" right />
+            <ColTh label="PRICE"  tip="Цена исполнения ордера" right />
+            <ColTh label="VALUE"  tip="Долларовая стоимость сделки (количество × цена)" right />
+            <ColTh label="FEE"    tip="Комиссия биржи за сделку" right />
           </tr>
         </thead>
         <tbody>
@@ -61,19 +62,11 @@ export function ExecutionPanel() {
   );
 }
 
-function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
-  return (
-    <th className={`px-3 py-2 text-zinc-500 font-medium ${right ? "text-right" : "text-left"}`}>
-      {children}
-    </th>
-  );
-}
-
 function Td({ children, right, className = "" }: {
   children: React.ReactNode; right?: boolean; className?: string;
 }) {
   return (
-    <td className={`px-3 py-1.5 ${right ? "text-right" : ""} ${className}`}>
+    <td className={`px-3 py-1.5 font-mono tabular-nums whitespace-nowrap ${right ? "text-right" : ""} ${className}`}>
       {children}
     </td>
   );
