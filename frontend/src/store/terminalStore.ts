@@ -6,7 +6,7 @@ import type {
 
 const MAX_FILLS = 200;
 
-interface TerminalStore {
+export interface TerminalStore {
   connected: boolean;
   exchange: string;
   basis: Record<string, BasisRow>;

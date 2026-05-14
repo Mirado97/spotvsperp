@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useTerminalStore } from "@/store/terminalStore";
+import { useTerminalStore, type TerminalStore } from "@/store/terminalStore";
 import type { WsMessage } from "@/types";
 
 const RECONNECT_MS = 3_000;
@@ -48,7 +48,7 @@ export function useWebSocket(url: string) {
   }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-function dispatch(msg: WsMessage, store: ReturnType<typeof useTerminalStore>) {
+function dispatch(msg: WsMessage, store: TerminalStore) {
   switch (msg.type) {
     case "basis":
       if (msg.symbol) store.updateBasis(msg.symbol, msg.data as never);
