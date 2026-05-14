@@ -11,7 +11,7 @@ exchanges:
   bybit:
     enabled: true
     testnet: true
-    ws_public_url: wss://stream-demo.bybit.com/v5/public
+    ws_public_url: wss://stream.bybit.com/v5/public
     ws_private_url: wss://stream-demo.bybit.com/v5/private
     rest_url: https://api-demo.bybit.com
     rate_limit:
