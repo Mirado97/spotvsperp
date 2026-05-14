@@ -232,7 +232,7 @@ class BybitRestClient:
         usdt_perps = [
             t for t in tickers
             if t.get("symbol", "").endswith("USDT")
-            and t.get("contractType", "") == "LinearPerpetual"
+            and "-" not in t.get("symbol", "")
         ]
         usdt_perps.sort(key=lambda t: float(t.get("turnover24h") or 0), reverse=True)
         return [t["symbol"] for t in usdt_perps[:n]]
