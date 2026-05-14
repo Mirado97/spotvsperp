@@ -1,0 +1,114 @@
+{
+  "title": "Basis & Funding",
+  "uid": "basis-funding",
+  "schemaVersion": 38,
+  "refresh": "5s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "exchange",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(cex_basis_bps, exchange)",
+        "current": { "value": "BYBIT" }
+      },
+      {
+        "name": "symbol",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(cex_basis_bps{exchange=\"$exchange\"}, symbol)",
+        "current": { "value": "BTCUSDT" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Basis (bps)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "cex_basis_bps{exchange=\"$exchange\", symbol=\"$symbol\"}",
+          "legendFormat": "{{symbol}} basis"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "displayName": "Basis bps" }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Carry Score (annualised)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "cex_carry_score{exchange=\"$exchange\", symbol=\"$symbol\"}",
+          "legendFormat": "{{symbol}} carry"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit" }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Funding Rate (8h)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "cex_funding_rate{exchange=\"$exchange\", symbol=\"$symbol\"}",
+          "legendFormat": "actual"
+        },
+        {
+          "expr": "cex_funding_rate_predicted{exchange=\"$exchange\", symbol=\"$symbol\"}",
+          "legendFormat": "predicted"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit" }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Funding Extreme Streak",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 8, "w": 6, "h": 8 },
+      "targets": [
+        {
+          "expr": "cex_funding_extreme_streak{exchange=\"$exchange\", symbol=\"$symbol\"}",
+          "legendFormat": "streak"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "thresholds": {
+          "steps": [
+            { "value": 0, "color": "green" },
+            { "value": 4, "color": "yellow" },
+            { "value": 6, "color": "red" }
+          ]
+        }}
+      }
+    },
+    {
+      "id": 5,
+      "title": "Funding Extreme",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+      "targets": [
+        {
+          "expr": "cex_funding_is_extreme{exchange=\"$exchange\", symbol=\"$symbol\"}",
+          "legendFormat": "extreme"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "mappings": [
+          { "type": "value", "options": { "0": { "text": "Normal", "color": "green" }, "1": { "text": "EXTREME", "color": "red" } } }
+        ]}
+      }
+    }
+  ]
+}

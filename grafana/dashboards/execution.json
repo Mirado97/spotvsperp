@@ -1,0 +1,108 @@
+{
+  "title": "Execution Analytics",
+  "uid": "execution",
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "exchange",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(cex_orders_placed_total, exchange)"
+      },
+      {
+        "name": "symbol",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(cex_orders_placed_total{exchange=\"$exchange\"}, symbol)"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Hedge Execution Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(cex_hedge_latency_ms_bucket{exchange=\"$exchange\",symbol=\"$symbol\"}[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(cex_hedge_latency_ms_bucket{exchange=\"$exchange\",symbol=\"$symbol\"}[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(cex_hedge_latency_ms_bucket{exchange=\"$exchange\",symbol=\"$symbol\"}[5m]))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 2,
+      "title": "Order Place Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(cex_order_place_latency_ms_bucket{exchange=\"$exchange\"}[5m]))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 3,
+      "title": "Orders Placed / min",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(cex_orders_placed_total{exchange=\"$exchange\",symbol=\"$symbol\"}[1m]) * 60",
+          "legendFormat": "{{side}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Hedge Success vs Failure",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 8, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(cex_hedge_success_total{exchange=\"$exchange\",symbol=\"$symbol\"}[5m])",
+          "legendFormat": "success"
+        },
+        {
+          "expr": "rate(cex_hedge_failure_total{exchange=\"$exchange\",symbol=\"$symbol\"}[5m])",
+          "legendFormat": "failure"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "WS Reconnects / hour",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "increase(cex_ws_reconnects_total{exchange=\"$exchange\"}[1h])",
+          "legendFormat": "reconnects"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "thresholds": {
+          "steps": [
+            { "value": 0, "color": "green" },
+            { "value": 3, "color": "yellow" },
+            { "value": 10, "color": "red" }
+          ]
+        }}
+      }
+    }
+  ]
+}

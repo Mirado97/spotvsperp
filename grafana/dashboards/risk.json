@@ -1,0 +1,141 @@
+{
+  "title": "Risk Monitor",
+  "uid": "risk-monitor",
+  "schemaVersion": 38,
+  "refresh": "5s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "exchange",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(cex_risk_level, exchange)"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Risk Level",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "cex_risk_level{exchange=\"$exchange\"}",
+          "legendFormat": "level"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "mappings": [
+          { "type": "value", "options": {
+            "0": { "text": "OK",        "color": "green" },
+            "1": { "text": "WARNING",   "color": "yellow" },
+            "2": { "text": "CRITICAL",  "color": "orange" },
+            "3": { "text": "EMERGENCY", "color": "red" }
+          }}
+        ]}
+      }
+    },
+    {
+      "id": 2,
+      "title": "Drawdown %",
+      "type": "gauge",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "cex_drawdown_pct{exchange=\"$exchange\"} * 100",
+          "legendFormat": "drawdown"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0, "max": 10,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 3, "color": "yellow" },
+              { "value": 5, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Total Exposure (USD)",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "cex_total_exposure_usd{exchange=\"$exchange\"}",
+          "legendFormat": "exposure"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    },
+    {
+      "id": 4,
+      "title": "Max Symbol Delta (USD)",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "cex_max_delta_usd{exchange=\"$exchange\"}",
+          "legendFormat": "max delta"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": {
+            "steps": [
+              { "value": 0,     "color": "green" },
+              { "value": 2500,  "color": "yellow" },
+              { "value": 5000,  "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Active Workers",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "cex_active_workers{exchange=\"$exchange\"}",
+          "legendFormat": "workers"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Equity (USD)",
+      "type": "timeseries",
+      "gridPos": { "x": 6, "y": 6, "w": 18, "h": 8 },
+      "targets": [
+        {
+          "expr": "cex_equity_usd{exchange=\"$exchange\"}",
+          "legendFormat": "equity"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    },
+    {
+      "id": 7,
+      "title": "Worker States",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "cex_worker_state{exchange=\"$exchange\"}",
+          "legendFormat": "{{symbol}}",
+          "instant": true
+        }
+      ]
+    }
+  ]
+}

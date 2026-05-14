@@ -1,0 +1,37 @@
+app:
+  name: cexvscex
+  env: development
+  debug: false
+
+logging:
+  level: INFO
+  format: json  # json | console
+
+exchanges:
+  bybit:
+    enabled: true
+    testnet: true
+    ws_public_url: wss://stream-testnet.bybit.com/v5/public
+    ws_private_url: wss://stream-testnet.bybit.com/v5/private
+    rest_url: https://api-testnet.bybit.com
+    rate_limit:
+      requests_per_second: 10
+      orders_per_second: 5
+    reconnect:
+      max_attempts: 10
+      base_delay: 1.0
+      max_delay: 60.0
+
+strategies:
+  enabled: []
+
+risk:
+  max_position_usd: 10000.0
+  max_total_exposure_usd: 50000.0
+  max_exchange_exposure_usd: 25000.0
+  min_funding_threshold: 0.0001
+  max_basis_pct: 2.0
+
+monitoring:
+  health_check_interval: 30
+  metrics_port: 9090

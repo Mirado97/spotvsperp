@@ -1,0 +1,48 @@
+# Production overrides: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+version: "3.9"
+
+services:
+  postgres:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  redis:
+    restart: always
+    command: >
+      redis-server
+      --save 3600 1
+      --appendonly yes
+      --appendfsync everysec
+
+  backend:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+        reservations:
+          memory: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  frontend:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  nginx:
+    restart: always
+
+  prometheus:
+    restart: always
+
+  grafana:
+    restart: always
