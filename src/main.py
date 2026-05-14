@@ -12,7 +12,6 @@ from src.core.bus import MarketDataBus
 from src.core.config import load_settings
 from src.core.logging_setup import get_logger
 from src.exchange.bybit.market_feed import BybitMarketFeed
-from src.exchange.bybit.parsers import parse_linear_ticker
 from src.exchange.bybit.rest_client import BybitRestClient
 from src.execution.bybit_executor import BybitExecutor
 from src.execution.hedge_engine import HedgeEngine
@@ -31,8 +30,18 @@ from src.strategy.orchestrator import StrategyOrchestrator
 
 logger = get_logger(__name__)
 
-_SYMBOLS = os.getenv("TRADING_SYMBOLS", "BTCUSDT,ETHUSDT").split(",")
 _EXCHANGE = "BYBIT"
+
+
+async def _resolve_symbols(rest: "BybitRestClient") -> list[str]:
+    """Return symbol list: from env if set, else top-N by 24h volume from Bybit."""
+    raw = os.getenv("TRADING_symbols", "").strip()
+    if raw:
+        return [s.strip() for s in raw.split(",") if s.strip()]
+    n = int(os.getenv("TOP_symbols_N", "100"))
+    symbols = await rest.get_top_usdt_perp_symbols(n)
+    logger.info("symbols.auto_resolved", count=len(symbols), top5=symbols[:5])
+    return symbols
 
 
 async def _build_app() -> Application:
@@ -48,6 +57,18 @@ async def _build_app() -> Application:
     redis_url = vault.get("REDIS_URL", "redis://localhost:6379/0")
 
     bus = MarketDataBus()
+    exchange_cfg = settings.exchanges.bybit
+
+    # ── REST client (needed early for symbol resolution) ──────────────────────
+    rest = BybitRestClient(
+        api_key=creds.api_key,
+        api_secret=creds.api_secret,
+        testnet=creds.testnet,
+        base_url=exchange_cfg.rest_url,
+    )
+
+    # ── Symbol list ───────────────────────────────────────────────────────────
+    _symbols = await _resolve_symbols(rest)
 
     # ── Storage ───────────────────────────────────────────────────────────────
     storage = StorageManager(postgres_dsn, redis_url)
@@ -55,21 +76,12 @@ async def _build_app() -> Application:
     await storage.apply_schema()
 
     # ── Market feed ───────────────────────────────────────────────────────────
-    exchange_cfg = settings.exchanges.bybit
     feed = BybitMarketFeed(exchange_cfg, bus)
 
     # ── Analysis engines ──────────────────────────────────────────────────────
     basis_engine = BasisEngine(bus, exchange=_EXCHANGE)
     funding_engine = FundingEngine(bus, exchange=_EXCHANGE)
     liq_engine = LiquidationEngine(bus, exchange=_EXCHANGE)
-
-    # ── Execution ─────────────────────────────────────────────────────────────
-    rest = BybitRestClient(
-        api_key=creds.api_key,
-        api_secret=creds.api_secret,
-        testnet=creds.testnet,
-        base_url=exchange_cfg.rest_url,
-    )
     tracker = OrderTracker()
     executor = BybitExecutor(rest, tracker)
     hedge_engine = HedgeEngine(executor, tracker)
@@ -87,7 +99,7 @@ async def _build_app() -> Application:
 
     # ── Strategy ──────────────────────────────────────────────────────────────
     strategy_configs = [
-        StrategyConfig(symbol=sym, exchange=_EXCHANGE) for sym in _SYMBOLS
+        StrategyConfig(symbol=sym, exchange=_EXCHANGE) for sym in _symbols
     ]
     orchestrator = StrategyOrchestrator(
         bus=bus,
@@ -101,14 +113,14 @@ async def _build_app() -> Application:
         market_repo=storage.market,
         redis=storage.redis,
         exchange=_EXCHANGE,
-        symbols=_SYMBOLS,
+        symbols=_symbols,
     )
 
     # ── Monitoring ────────────────────────────────────────────────────────────
     monitoring = MonitoringManager(
         bus=bus,
         exchange=_EXCHANGE,
-        symbols=_SYMBOLS,
+        symbols=_symbols,
         exporter_port=settings.monitoring.metrics_port,
     )
 
@@ -120,7 +132,7 @@ async def _build_app() -> Application:
     api = APIManager(
         bus=bus,
         exchange=_EXCHANGE,
-        symbols=_SYMBOLS,
+        symbols=_symbols,
         port=int(vault.get("WS_PORT", "8080")),
         get_worker_statuses=orchestrator.status,
         get_balance=_get_balance,
@@ -128,51 +140,39 @@ async def _build_app() -> Application:
 
     # ── Lifecycle wiring ──────────────────────────────────────────────────────
     from src.core.container import ServiceContainer
-    from src.exchange.bybit import constants as C
 
     container = ServiceContainer()
     _poller_task: asyncio.Task[None] | None = None
 
-    async def _poll_perp_tickers() -> None:
-        """REST fallback for linear tickers — Bybit testnet WS doesn't push perp data."""
+    async def _poll_rtt() -> None:
+        """Measure REST round-trip latency — single request every 5s."""
+        probe = _symbols[0] if _symbols else "BTCUSDT"
         while True:
-            ts_ms = int(time.time() * 1000)
-            for sym in _SYMBOLS:
-                try:
-                    t0 = time.monotonic()
-                    raw = await rest.get_linear_ticker(sym)
-                    rest_rtt_ms = int((time.monotonic() - t0) * 1000)
-                    if raw:
-                        data = {"data": raw, "ts": ts_ms}
-                        ticker, funding, oi = parse_linear_ticker(data, ts_ms)
-                        if ticker:
-                            bus.publish(C.bus_ticker_topic(_EXCHANGE, sym, "PERP"), ticker)
-                        if funding:
-                            bus.publish(C.bus_funding_topic(_EXCHANGE, sym), funding)
-                        if oi:
-                            bus.publish(C.bus_oi_topic(_EXCHANGE, sym), oi)
-                    bus.publish(f"latency.{_EXCHANGE}", rest_rtt_ms)
-                except Exception:
-                    logger.exception("perp_poller.error", symbol=sym)
-            await asyncio.sleep(2.0)
+            try:
+                t0 = time.monotonic()
+                await rest.get_linear_ticker(probe)
+                bus.publish(f"latency.{_EXCHANGE}", int((time.monotonic() - t0) * 1000))
+            except Exception:
+                logger.exception("rtt_poller.error")
+            await asyncio.sleep(5.0)
 
     async def _startup() -> None:
         nonlocal _poller_task
         await monitoring.start()
         await feed.start()
-        await basis_engine.start(_SYMBOLS)
-        await funding_engine.start(_SYMBOLS)
-        await liq_engine.start(_SYMBOLS)
+        await basis_engine.start(_symbols)
+        await funding_engine.start(_symbols)
+        await liq_engine.start(_symbols)
         writer.start()
         await orchestrator.start(strategy_configs)
         await api.start()
-        for sym in _SYMBOLS:
+        for sym in _symbols:
             await feed.subscribe_spot_ticker(sym)
             await feed.subscribe_perp_ticker(sym)
-        for sym in _SYMBOLS:
+        for sym in _symbols:
             await feed.subscribe_liquidations(sym)
-        _poller_task = asyncio.create_task(_poll_perp_tickers(), name="perp_ticker_poller")
-        logger.info("app.all_services_started", symbols=_SYMBOLS)
+        _poller_task = asyncio.create_task(_poll_rtt(), name="rtt_poller")
+        logger.info("app.all_services_started", symbols=_symbols)
 
     async def _shutdown() -> None:
         if _poller_task:

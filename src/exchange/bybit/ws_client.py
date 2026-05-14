@@ -14,6 +14,12 @@ logger = get_logger(__name__)
 
 _MessageHandler = Callable[[dict[str, Any]], Awaitable[None]]
 
+_WS_BATCH = 10  # Bybit max topics per subscribe message
+
+
+def _chunks(lst: list[str], n: int) -> list[list[str]]:
+    return [lst[i:i + n] for i in range(0, len(lst), n)]
+
 
 class BybitWSClient:
     """
@@ -77,7 +83,8 @@ class BybitWSClient:
             return
         self._subscribed_topics.extend(new)
         if self._connected.is_set():
-            await self._send({"op": "subscribe", "args": new})
+            for chunk in _chunks(new, _WS_BATCH):
+                await self._send({"op": "subscribe", "args": chunk})
 
     async def resubscribe(self, topics: list[str]) -> None:
         """Force a re-subscription (sends subscribe even if already tracked).
@@ -134,15 +141,15 @@ class BybitWSClient:
             logger.info("ws_client.connected", url=self._url)
 
             if self._subscribed_topics:
-                # Send tickers/orderbooks first, liquidations separately to avoid batch rejection
+                # Liquidations in a separate batch; all batches capped at _WS_BATCH topics
                 primary = [t for t in self._subscribed_topics if not t.startswith("liquidation.")]
                 secondary = [t for t in self._subscribed_topics if t.startswith("liquidation.")]
-                if primary:
-                    logger.info("ws_client.subscribing", url=self._url, topics=primary)
-                    await self._send({"op": "subscribe", "args": primary})
-                if secondary:
-                    logger.info("ws_client.subscribing", url=self._url, topics=secondary)
-                    await self._send({"op": "subscribe", "args": secondary})
+                for chunk in _chunks(primary, _WS_BATCH):
+                    logger.info("ws_client.subscribing", url=self._url, count=len(chunk))
+                    await self._send({"op": "subscribe", "args": chunk})
+                for chunk in _chunks(secondary, _WS_BATCH):
+                    logger.info("ws_client.subscribing", url=self._url, count=len(chunk))
+                    await self._send({"op": "subscribe", "args": chunk})
 
             hb_task = asyncio.create_task(self._heartbeat_loop(), name="ws_heartbeat")
             try:

@@ -214,3 +214,19 @@ class BybitRestClient:
         )
         items = resp.get("result", {}).get("list", [])
         return items[0] if items else None
+
+    async def get_all_linear_tickers(self) -> list[dict[str, Any]]:
+        """Fetch all linear/perpetual tickers in one request."""
+        resp = await self._get_public("/v5/market/tickers", {"category": "linear"})
+        return resp.get("result", {}).get("list", [])
+
+    async def get_top_usdt_perp_symbols(self, n: int = 100) -> list[str]:
+        """Return top-N USDT-margined perpetual symbols sorted by 24h turnover."""
+        tickers = await self.get_all_linear_tickers()
+        usdt_perps = [
+            t for t in tickers
+            if t.get("symbol", "").endswith("USDT")
+            and t.get("contractType", "") == "LinearPerpetual"
+        ]
+        usdt_perps.sort(key=lambda t: float(t.get("turnover24h") or 0), reverse=True)
+        return [t["symbol"] for t in usdt_perps[:n]]
