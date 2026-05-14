@@ -39,7 +39,7 @@ export function ColTh({ label, tip, right }: ColThProps) {
     <th className={`px-3 py-2 text-zinc-500 font-medium whitespace-nowrap ${right ? "text-right" : "text-left"}`}>
       <span className="inline-flex items-center gap-0.5">
         {label}
-        <Tooltip text={tip} />
+        <Tooltip text={tip} below />
       </span>
     </th>
   );
