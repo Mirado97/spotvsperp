@@ -51,11 +51,11 @@ export function useWebSocket(url: string) {
 function dispatch(msg: WsMessage, store: TerminalStore) {
   switch (msg.type) {
     case "basis":
-      if (msg.symbol) store.updateBasis(msg.symbol, msg.data as never);
+      if (msg.symbol) store.updateBasis(msg.symbol, msg.data as Parameters<TerminalStore["updateBasis"]>[1]);
       break;
 
     case "funding":
-      if (msg.symbol) store.updateFunding(msg.symbol, msg.data as never);
+      if (msg.symbol) store.updateFunding(msg.symbol, msg.data as Parameters<TerminalStore["updateFunding"]>[1]);
       break;
 
     case "risk_alert":
@@ -77,12 +77,12 @@ function dispatch(msg: WsMessage, store: TerminalStore) {
     }
 
     case "fill":
-      if (msg.symbol) store.addFill({ symbol: msg.symbol, ...(msg.data as never) });
+      if (msg.symbol) store.addFill({ symbol: msg.symbol, ...(msg.data as Record<string, unknown>) } as Parameters<TerminalStore["addFill"]>[0]);
       break;
 
     case "workers": {
       const workers = msg.data as { symbol: string }[];
-      for (const w of workers) store.updateWorker(w.symbol, w as never);
+      for (const w of workers) store.updateWorker(w.symbol, w as Parameters<TerminalStore["updateWorker"]>[1]);
       break;
     }
 
