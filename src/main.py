@@ -11,6 +11,7 @@ from src.core.bus import MarketDataBus
 from src.core.config import load_settings
 from src.core.logging_setup import get_logger
 from src.exchange.bybit.market_feed import BybitMarketFeed
+from src.exchange.bybit.parsers import parse_linear_ticker
 from src.exchange.bybit.rest_client import BybitRestClient
 from src.execution.bybit_executor import BybitExecutor
 from src.execution.hedge_engine import HedgeEngine
@@ -125,10 +126,33 @@ async def _build_app() -> Application:
 
     # ── Lifecycle wiring ──────────────────────────────────────────────────────
     from src.core.container import ServiceContainer
+    from src.exchange.bybit import constants as C
 
     container = ServiceContainer()
+    _poller_task: asyncio.Task[None] | None = None
+
+    async def _poll_perp_tickers() -> None:
+        """REST fallback for linear tickers — Bybit testnet WS doesn't push perp data."""
+        while True:
+            ts_ms = int(asyncio.get_event_loop().time() * 1000)
+            for sym in _SYMBOLS:
+                try:
+                    raw = await rest.get_linear_ticker(sym)
+                    if raw:
+                        data = {"data": raw, "ts": ts_ms}
+                        ticker, funding, oi = parse_linear_ticker(data, ts_ms)
+                        if ticker:
+                            bus.publish(C.bus_ticker_topic(_EXCHANGE, sym, "PERP"), ticker)
+                        if funding:
+                            bus.publish(C.bus_funding_topic(_EXCHANGE, sym), funding)
+                        if oi:
+                            bus.publish(C.bus_oi_topic(_EXCHANGE, sym), oi)
+                except Exception:
+                    logger.exception("perp_poller.error", symbol=sym)
+            await asyncio.sleep(2.0)
 
     async def _startup() -> None:
+        nonlocal _poller_task
         await monitoring.start()
         await feed.start()
         await basis_engine.start(_SYMBOLS)
@@ -141,9 +165,13 @@ async def _build_app() -> Application:
             await feed.subscribe_spot_ticker(sym)
             await feed.subscribe_perp_ticker(sym)
             await feed.subscribe_liquidations(sym)
+        _poller_task = asyncio.create_task(_poll_perp_tickers(), name="perp_ticker_poller")
         logger.info("app.all_services_started", symbols=_SYMBOLS)
 
     async def _shutdown() -> None:
+        if _poller_task:
+            _poller_task.cancel()
+            await asyncio.gather(_poller_task, return_exceptions=True)
         await api.stop()
         await orchestrator.stop()
         writer.stop()

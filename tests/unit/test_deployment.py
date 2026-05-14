@@ -125,5 +125,5 @@ def test_nginx_config_exists():
 
 def test_next_config_standalone():
     root = pathlib.Path(__file__).parent.parent.parent
-    content = (root / "frontend" / "next.config.ts").read_text()
+    content = (root / "frontend" / "next.config.mjs").read_text()
     assert 'output: "standalone"' in content or "output: 'standalone'" in content

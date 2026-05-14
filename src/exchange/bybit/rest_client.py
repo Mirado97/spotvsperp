@@ -124,6 +124,14 @@ class BybitRestClient:
             data = await resp.json(content_type=None)
         return data
 
+    async def _get_public(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+        session = await self._get_session()
+        async with session.get(
+            f"{self._base}{path}",
+            params=params,
+        ) as resp:
+            return await resp.json(content_type=None)
+
     # ── Order API ─────────────────────────────────────────────────────────────
 
     async def place_order(self, request: OrderRequest) -> str:
@@ -196,3 +204,12 @@ class BybitRestClient:
             if c.get("coin") == coin:
                 return float(c.get("walletBalance", 0))
         return 0.0
+
+    async def get_linear_ticker(self, symbol: str) -> dict[str, Any] | None:
+        """Fetch a single linear/perpetual ticker via public REST (no auth required)."""
+        resp = await self._get_public(
+            "/v5/market/tickers",
+            {"category": "linear", "symbol": symbol},
+        )
+        items = resp.get("result", {}).get("list", [])
+        return items[0] if items else None
