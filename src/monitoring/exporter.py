@@ -10,7 +10,9 @@ logger = get_logger(__name__)
 
 async def _metrics_handler(request: web.Request) -> web.Response:
     output = generate_latest()
-    return web.Response(body=output, content_type=CONTENT_TYPE_LATEST)
+    # CONTENT_TYPE_LATEST contains "; charset=utf-8" — split it out for aiohttp
+    content_type = CONTENT_TYPE_LATEST.split(";")[0].strip()
+    return web.Response(body=output, content_type=content_type, charset="utf-8")
 
 
 class MetricsExporter:
