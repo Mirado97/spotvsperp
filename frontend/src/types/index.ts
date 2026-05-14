@@ -74,7 +74,7 @@ export interface LiqAlertRow {
 // WebSocket message envelope
 export interface WsMessage {
   type: "basis" | "funding" | "risk_alert" | "risk_snapshot" | "fill"
-      | "liq_alert" | "workers" | "balance" | "equity";
+      | "liq_alert" | "workers" | "balance" | "equity" | "latency";
   exchange: string;
   symbol?: string;
   data: Record<string, unknown>;

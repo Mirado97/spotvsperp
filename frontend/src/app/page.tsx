@@ -10,6 +10,7 @@ import { PositionsPanel } from "@/components/panels/PositionsPanel";
 import { RiskPanel } from "@/components/panels/RiskPanel";
 import { ExecutionPanel } from "@/components/panels/ExecutionPanel";
 import { PnLPanel } from "@/components/panels/PnLPanel";
+import { LatencyPanel } from "@/components/panels/LatencyPanel";
 
 const WS_URL =
   typeof window !== "undefined"
@@ -31,6 +32,7 @@ export default function Terminal() {
         {tab === "RISK"      && <RiskPanel />}
         {tab === "EXECUTION" && <ExecutionPanel />}
         {tab === "PnL"       && <PnLPanel />}
+        {tab === "LATENCY"   && <LatencyPanel />}
       </main>
     </div>
   );

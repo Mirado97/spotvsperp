@@ -29,9 +29,10 @@ export function useWebSocket(url: string) {
       ws.onerror = () => ws.close();
 
       ws.onmessage = (e: MessageEvent<string>) => {
+        const browserTs = Date.now();
         try {
           const msg = JSON.parse(e.data) as WsMessage;
-          dispatch(msg, store);
+          dispatch(msg, store, browserTs);
         } catch {
           // ignore malformed messages
         }
@@ -48,12 +49,16 @@ export function useWebSocket(url: string) {
   }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-function dispatch(msg: WsMessage, store: TerminalStore) {
+function dispatch(msg: WsMessage, store: TerminalStore, browserTs: number) {
   const d = msg.data;
 
   switch (msg.type) {
     case "basis":
       if (msg.symbol) store.updateBasis(msg.symbol, d as Partial<BasisRow>);
+      {
+        const serverTs = (msg as unknown as Record<string, number>).server_ts_ms;
+        if (serverTs) store.updateLatency({ server_to_browser_ms: browserTs - serverTs, updated_at: browserTs });
+      }
       break;
 
     case "funding":
@@ -90,6 +95,10 @@ function dispatch(msg: WsMessage, store: TerminalStore) {
 
     case "equity":
       store.setEquity(d.total_equity as number);
+      break;
+
+    case "latency":
+      store.updateLatency({ rest_rtt_ms: d.rest_rtt_ms as number, updated_at: browserTs });
       break;
   }
 }

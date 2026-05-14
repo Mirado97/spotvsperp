@@ -68,6 +68,7 @@ class WebSocketServer:
         self._tasks += [
             asyncio.create_task(self._consume_risk_alerts(),    name="ws_risk_alerts"),
             asyncio.create_task(self._consume_risk_snapshots(), name="ws_risk_snapshots"),
+            asyncio.create_task(self._consume_latency(),        name="ws_latency"),
         ]
         if self._get_statuses:
             self._tasks.append(
@@ -161,6 +162,13 @@ class WebSocketServer:
         while True:
             snap = await q.get()
             await self._broadcast(ser.risk_snapshot_msg(self._exchange, snap))
+
+    async def _consume_latency(self) -> None:
+        q = self._bus.subscribe(f"latency.{self._exchange}")
+        while True:
+            rest_rtt_ms = await q.get()
+            if self._clients:
+                await self._broadcast(ser.latency_msg(self._exchange, rest_rtt_ms))
 
     async def _poll_workers(self) -> None:
         while True:

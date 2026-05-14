@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import msgspec
 import orjson
 
@@ -14,6 +15,7 @@ def basis_msg(exchange: str, symbol: str, snap) -> str:
         "type": "basis",
         "exchange": exchange,
         "symbol": symbol,
+        "server_ts_ms": int(time.time() * 1000),
         "data": _struct_to_dict(snap),
     }).decode()
 
@@ -82,4 +84,12 @@ def equity_msg(exchange: str, total_equity: float) -> str:
         "type": "equity",
         "exchange": exchange,
         "data": {"total_equity": total_equity},
+    }).decode()
+
+
+def latency_msg(exchange: str, rest_rtt_ms: int) -> str:
+    return orjson.dumps({
+        "type": "latency",
+        "exchange": exchange,
+        "data": {"rest_rtt_ms": rest_rtt_ms, "ts_ms": int(time.time() * 1000)},
     }).decode()

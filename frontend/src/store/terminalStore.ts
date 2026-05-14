@@ -6,6 +6,12 @@ import type {
 
 const MAX_FILLS = 200;
 
+export interface LatencyState {
+  rest_rtt_ms: number;
+  server_to_browser_ms: number;
+  updated_at: number;
+}
+
 export interface TerminalStore {
   connected: boolean;
   exchange: string;
@@ -17,6 +23,7 @@ export interface TerminalStore {
   fills: FillRow[];
   balance_usdt: number;
   equity: number;
+  latency: LatencyState;
 
   // Actions
   setConnected: (v: boolean) => void;
@@ -29,6 +36,7 @@ export interface TerminalStore {
   addFill: (fill: FillRow) => void;
   setBalance: (usdt: number) => void;
   setEquity: (equity: number) => void;
+  updateLatency: (data: Partial<LatencyState>) => void;
 }
 
 export const useTerminalStore = create<TerminalStore>((set) => ({
@@ -42,6 +50,7 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
   fills: [],
   balance_usdt: 0,
   equity: 0,
+  latency: { rest_rtt_ms: 0, server_to_browser_ms: 0, updated_at: 0 },
 
   setConnected: (v) => set({ connected: v }),
   setExchange: (v) => set({ exchange: v }),
@@ -76,4 +85,6 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
 
   setBalance: (usdt) => set({ balance_usdt: usdt }),
   setEquity: (equity) => set({ equity }),
+  updateLatency: (data) =>
+    set((s) => ({ latency: { ...s.latency, ...data } })),
 }));

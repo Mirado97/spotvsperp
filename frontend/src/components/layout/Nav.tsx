@@ -1,6 +1,6 @@
 "use client";
 
-const TABS = ["BASIS", "FUNDING", "POSITIONS", "RISK", "EXECUTION", "PnL"] as const;
+const TABS = ["BASIS", "FUNDING", "POSITIONS", "RISK", "EXECUTION", "PnL", "LATENCY"] as const;
 export type Tab = (typeof TABS)[number];
 
 interface Props {

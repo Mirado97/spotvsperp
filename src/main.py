@@ -139,7 +139,9 @@ async def _build_app() -> Application:
             ts_ms = int(time.time() * 1000)
             for sym in _SYMBOLS:
                 try:
+                    t0 = time.monotonic()
                     raw = await rest.get_linear_ticker(sym)
+                    rest_rtt_ms = int((time.monotonic() - t0) * 1000)
                     if raw:
                         data = {"data": raw, "ts": ts_ms}
                         ticker, funding, oi = parse_linear_ticker(data, ts_ms)
@@ -149,6 +151,7 @@ async def _build_app() -> Application:
                             bus.publish(C.bus_funding_topic(_EXCHANGE, sym), funding)
                         if oi:
                             bus.publish(C.bus_oi_topic(_EXCHANGE, sym), oi)
+                    bus.publish(f"latency.{_EXCHANGE}", rest_rtt_ms)
                 except Exception:
                     logger.exception("perp_poller.error", symbol=sym)
             await asyncio.sleep(2.0)
