@@ -166,6 +166,7 @@ async def _build_app() -> Application:
         for sym in _SYMBOLS:
             await feed.subscribe_spot_ticker(sym)
             await feed.subscribe_perp_ticker(sym)
+        for sym in _SYMBOLS:
             await feed.subscribe_liquidations(sym)
         _poller_task = asyncio.create_task(_poll_perp_tickers(), name="perp_ticker_poller")
         logger.info("app.all_services_started", symbols=_SYMBOLS)
