@@ -36,6 +36,7 @@ class WebSocketServer:
         host: str = "0.0.0.0",
         port: int = 8080,
         get_worker_statuses: Callable[[], list[Any]] | None = None,
+        get_balance: Callable[[], Any] | None = None,
     ) -> None:
         self._bus = bus
         self._exchange = exchange
@@ -43,6 +44,7 @@ class WebSocketServer:
         self._host = host
         self._port = port
         self._get_statuses = get_worker_statuses
+        self._get_balance = get_balance
         self._clients: set[web.WebSocketResponse] = set()
         self._runner: web.AppRunner | None = None
         self._tasks: list[asyncio.Task] = []
@@ -70,6 +72,10 @@ class WebSocketServer:
         if self._get_statuses:
             self._tasks.append(
                 asyncio.create_task(self._poll_workers(), name="ws_poll_workers")
+            )
+        if self._get_balance:
+            self._tasks.append(
+                asyncio.create_task(self._poll_balance(), name="ws_poll_balance")
             )
         logger.info("ws_server.started", host=self._host, port=self._port)
 
@@ -163,3 +169,16 @@ class WebSocketServer:
                 statuses = self._get_statuses()
                 if statuses:
                     await self._broadcast(ser.workers_msg(self._exchange, statuses))
+
+    async def _poll_balance(self) -> None:
+        while True:
+            if self._clients:
+                try:
+                    available, total = await self._get_balance()
+                    await self._broadcast(
+                        ser.balance_msg(self._exchange, "USDT", available, total)
+                    )
+                    await self._broadcast(ser.equity_msg(self._exchange, total))
+                except Exception:
+                    logger.exception("ws_server.balance_poll_error")
+            await asyncio.sleep(30.0)

@@ -30,6 +30,7 @@ class APIManager:
         host: str = "0.0.0.0",
         port: int = 8080,
         get_worker_statuses: Callable[[], list[Any]] | None = None,
+        get_balance: Callable[[], Any] | None = None,
     ) -> None:
         self._server = WebSocketServer(
             bus=bus,
@@ -38,6 +39,7 @@ class APIManager:
             host=host,
             port=port,
             get_worker_statuses=get_worker_statuses,
+            get_balance=get_balance,
         )
 
     @property

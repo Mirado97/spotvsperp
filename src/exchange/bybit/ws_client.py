@@ -169,6 +169,8 @@ class BybitWSClient:
         if "topic" not in data:
             return
 
+        logger.debug("ws_client.topic_received", topic=data.get("topic"))
+
         try:
             await self._on_message(data)
         except Exception:

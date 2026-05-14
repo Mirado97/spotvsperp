@@ -5,6 +5,7 @@ import asyncio
 import os
 
 from src.basis.engine import BasisEngine
+from src.core.logging_setup import configure_logging
 from src.core.app import Application
 from src.core.bus import MarketDataBus
 from src.core.config import load_settings
@@ -34,6 +35,7 @@ _EXCHANGE = "BYBIT"
 
 async def _build_app() -> Application:
     settings = load_settings()
+    configure_logging(level=os.getenv("APP_LOGGING__LEVEL", "DEBUG"), fmt="console")
     vault = SecretsVault()
     creds = vault.get_exchange_credentials(_EXCHANGE)
 
@@ -108,12 +110,17 @@ async def _build_app() -> Application:
     )
 
     # ── API / WebSocket ───────────────────────────────────────────────────────
+    async def _get_balance() -> tuple[float, float]:
+        available = await rest.get_wallet_balance("USDT")
+        return available, available
+
     api = APIManager(
         bus=bus,
         exchange=_EXCHANGE,
         symbols=_SYMBOLS,
         port=int(vault.get("WS_PORT", "8080")),
         get_worker_statuses=orchestrator.status,
+        get_balance=_get_balance,
     )
 
     # ── Lifecycle wiring ──────────────────────────────────────────────────────
