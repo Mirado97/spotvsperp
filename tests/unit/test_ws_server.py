@@ -144,8 +144,8 @@ async def test_ws_server_starts_correct_number_of_tasks():
     await server.start()
     await asyncio.sleep(0.05)
 
-    # 4 tasks per symbol (basis, funding, fill, liq) + 2 portfolio = 10
-    assert len(server._tasks) == 10
+    # 4 tasks per symbol (basis, funding, fill, liq) + 2 portfolio + 1 latency = 11
+    assert len(server._tasks) == 11
 
     await server.stop()
 
