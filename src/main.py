@@ -68,6 +68,7 @@ async def _build_app() -> Application:
         api_key=creds.api_key,
         api_secret=creds.api_secret,
         testnet=creds.testnet,
+        base_url=exchange_cfg.rest_url,
     )
     tracker = OrderTracker()
     executor = BybitExecutor(rest, tracker)

@@ -57,10 +57,11 @@ class BybitRestClient:
         api_key: str,
         api_secret: str,
         testnet: bool = True,
+        base_url: str | None = None,
     ) -> None:
         self._key = api_key
         self._secret = api_secret
-        self._base = _TESTNET_URL if testnet else _MAINNET_URL
+        self._base = base_url or (_TESTNET_URL if testnet else _MAINNET_URL)
         self._session: aiohttp.ClientSession | None = None
 
     async def _get_session(self) -> aiohttp.ClientSession:

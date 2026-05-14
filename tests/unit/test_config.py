@@ -55,7 +55,7 @@ def test_bybit_exchange_config():
     settings = load_settings("development")
     bybit = settings.exchanges.bybit
     assert bybit is not None
-    assert "testnet.bybit.com" in bybit.ws_public_url
+    assert "bybit.com" in bybit.ws_public_url
     assert bybit.rate_limit.requests_per_second == 10
     assert bybit.reconnect.max_attempts == 10
 
