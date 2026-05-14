@@ -69,9 +69,9 @@ function Tr({ children, header }: { children: React.ReactNode; header?: boolean 
   return <tr className={cls}>{children}</tr>;
 }
 
-function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+function Th({ children, right, w }: { children: React.ReactNode; right?: boolean; w?: string }) {
   return (
-    <th className={`px-3 py-2 text-zinc-500 font-medium ${right ? "text-right" : "text-left"}`}>
+    <th className={`px-3 py-2 text-zinc-500 font-medium whitespace-nowrap ${right ? "text-right" : "text-left"} ${w ?? ""}`}>
       {children}
     </th>
   );
@@ -81,7 +81,7 @@ function Td({ children, right, className = "" }: {
   children: React.ReactNode; right?: boolean; className?: string;
 }) {
   return (
-    <td className={`px-3 py-1.5 ${right ? "text-right" : ""} ${className}`}>
+    <td className={`px-3 py-1.5 font-mono tabular-nums whitespace-nowrap ${right ? "text-right" : ""} ${className}`}>
       {children}
     </td>
   );

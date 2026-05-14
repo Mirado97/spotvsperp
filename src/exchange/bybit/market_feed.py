@@ -139,9 +139,11 @@ class BybitMarketFeed(ExchangeMarketFeed):
         if topic.startswith("tickers."):
             symbol = topic[8:]
             ticker, funding, oi = parse_linear_ticker(data, ts_ms)
-            if ticker:
+            if ticker and ticker.last > 0:
                 logger.debug("feed.perp_ticker", symbol=symbol, last=ticker.last)
                 self._bus.publish(C.bus_ticker_topic(_EXCHANGE_NAME, symbol, "PERP"), ticker)
+            elif ticker and ticker.last == 0:
+                pass  # delta update without price — skip silently
             else:
                 logger.warning("feed.perp_ticker_parse_failed", topic=topic)
             if funding:
