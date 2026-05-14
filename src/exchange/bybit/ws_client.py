@@ -134,6 +134,7 @@ class BybitWSClient:
             logger.info("ws_client.connected", url=self._url)
 
             if self._subscribed_topics:
+                logger.info("ws_client.subscribing", url=self._url, topics=self._subscribed_topics)
                 await self._send({"op": "subscribe", "args": self._subscribed_topics})
 
             hb_task = asyncio.create_task(self._heartbeat_loop(), name="ws_heartbeat")
@@ -169,7 +170,7 @@ class BybitWSClient:
         if "topic" not in data:
             return
 
-        logger.debug("ws_client.topic_received", topic=data.get("topic"))
+        logger.debug("ws_client.topic_received", topic=data.get("topic"), url=self._url.split("/")[-1])
 
         try:
             await self._on_message(data)
