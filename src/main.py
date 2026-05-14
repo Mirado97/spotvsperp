@@ -73,7 +73,6 @@ async def _build_app() -> Application:
     risk_limits = RiskLimits(
         max_position_usd=settings.risk.max_position_usd,
         max_total_exposure_usd=settings.risk.max_total_exposure_usd,
-        max_exchange_exposure_usd=settings.risk.max_exchange_exposure_usd,
     )
     risk_engine = RiskEngine(
         bus=bus,
